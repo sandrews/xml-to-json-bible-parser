@@ -6,9 +6,10 @@ Created on Apr 11, 2014
 import xml.etree.ElementTree as ET
 import optparse
 import json
+import copy
 
 
-def generate_output(books_metadata, xml, output):
+def generate_verses(books_metadata, xml, output):
     """
     convert xml to json
     original XML schema:
@@ -59,22 +60,30 @@ def generate_output(books_metadata, xml, output):
     with open(output, 'w') as f:
         json.dump(books, f, indent=2)
 
-def parse_metadata(metadata_file):
+def generate_metadata(metadata_input_file, metadata_output_file):
     """
     open the metadata file for reading
     """
-    with open(metadata_file) as json_data:
-        return json.load(json_data)
+    with open(metadata_input_file) as json_data:
+        metadata = json.load(json_data)
+        metadata_copy = copy.copy(metadata)
+        verse_list = []
+        book_map= metadata_copy["verses"]
+        for book in metadata_copy["names"]:
+            verse_list.append(book_map[book[0]])
+        metadata_copy.update(dict(verses = verse_list))
+        with open(metadata_output_file, 'w+') as f:
+            json.dump(metadata_copy, f, indent = 2)
+        return metadata
 
 def main():
     """
     main function
     """
-    parser = optparse.OptionParser("usage: %prog {metadata file} {input xml file} {output json file}")
+    parser = optparse.OptionParser("usage: %prog {metadata input file} {metadata output file} {input xml file} {output json file}")
     (options, args) = parser.parse_args()
-    metadata = parse_metadata(args[0])
-    generate_output(metadata["verses"], args[1], args[2])
-
+    metadata = generate_metadata(args[0], args[1])
+    generate_verses(metadata["verses"], args[2], args[3])
     
 if "__main__" == __name__:
     main()
