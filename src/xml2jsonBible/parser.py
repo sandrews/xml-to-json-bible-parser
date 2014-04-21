@@ -31,7 +31,7 @@ def generate_output(books_metadata, xml, output):
         if book_name not in books_metadata:
             print (book_name + " not found in books")
             return
-        chapter_num = int(len(books_metadata[book_name]))
+        chapter_num = len(books_metadata[book_name])
         del books_metadata[book_name]
         
         chapters = []
@@ -56,10 +56,13 @@ def generate_output(books_metadata, xml, output):
         if chapter_count != chapter_num:
             print ("chapter number error " + book_name + ' chapter count is only ' + str(chapter_count))
             return
-    f = open(output, 'w')
-    json.dump(books, f, indent=2)
+    with open(output, 'w') as f:
+        json.dump(books, f, indent=2)
 
 def parse_metadata(metadata_file):
+    """
+    open the metadata file for reading
+    """
     with open(metadata_file) as json_data:
         return json.load(json_data)
 
