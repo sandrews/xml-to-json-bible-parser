@@ -19,13 +19,10 @@ def generate_verses(books_metadata, xml, output):
                 -> chapter
                     -> verse
     """
-    tree = ET.parse(xml)
-    root = tree.getroot()
+    tree = ET.parse(xml)    
+    books = []
     
-    books = {}
-    ver = root.attrib["translation"]
-    books.update(dict(version=ver)) 
-    
+    # for each book
     for book in tree.findall("./*/book"):
         book_name = book.attrib['name']
         print (book_name)
@@ -35,6 +32,7 @@ def generate_verses(books_metadata, xml, output):
         chapter_num = len(books_metadata[book_name])
         del books_metadata[book_name]
         
+        # for each chapter
         chapters = []
         chapter_count = 0
         for chapter in list(book):
@@ -45,22 +43,31 @@ def generate_verses(books_metadata, xml, output):
                 return
             verses = []
             verse_count = 0
+            
+            # for each verse
             for verse in list(chapter):
                 verse_count += 1
                 verse_number = int(verse.attrib["number"])
                 if verse_number != verse_count:
                     print ("verse number error " + book.attrib['name'] + ' ' + chapter_number + ' ' + verse_number)
                     return
+                # append to verse list
                 verses.append(verse.text)
+            # append to chapter list
             chapters.append(verses)
-        books.update({book_name : chapters})
+        # append to book list
+        books.append(chapters)
+        
+        # error checking
         if chapter_count != chapter_num:
             print ("chapter number error " + book_name + ' chapter count is only ' + str(chapter_count))
             return
+
+    # write to file
     with open(output, 'w') as f:
         json.dump(books, f, indent=2)
 
-def generate_metadata(metadata_input_file, metadata_output_file):
+def generate_metadata(metadata_input_file):
     """
     open the metadata file for reading
     """
@@ -72,7 +79,7 @@ def generate_metadata(metadata_input_file, metadata_output_file):
         for book in metadata_copy["names"]:
             verse_list.append(book_map[book[0]])
         metadata_copy.update(dict(verses = verse_list))
-        with open(metadata_output_file, 'w+') as f:
+        with open('processed_' + metadata_input_file, 'w+') as f:
             json.dump(metadata_copy, f, indent = 2)
         return metadata
 
@@ -80,10 +87,11 @@ def main():
     """
     main function
     """
-    parser = optparse.OptionParser("usage: %prog {metadata input file} {metadata output file} {input xml file} {output json file}")
+    parser = optparse.OptionParser("usage: %prog {metadata input file}")
     (options, args) = parser.parse_args()
-    metadata = generate_metadata(args[0], args[1])
-    generate_verses(metadata["verses"], args[2], args[3])
+    metadata = generate_metadata(args[0])
+    for version in metadata['versions']:
+        generate_verses(metadata["verses"], version + '.xml', version + '.json')
     
 if "__main__" == __name__:
     main()
