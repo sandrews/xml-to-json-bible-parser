@@ -4,9 +4,33 @@ Created on Apr 11, 2014
 @author: lcabancla
 '''
 import xml.etree.ElementTree as ET
+import sqlite3
 import optparse
 import json
 import copy
+
+## build database
+book_table = "BOOK_NAME"
+book_table_id = ' '.join(["BOOK_ID", "INTEGER"])
+book_table_alias = ' '.join(["BOOK_NAME", "TEXT"])
+book_table_columns = ', '.join([book_table_id, book_table_alias])
+book_table_columns_insert = ', '.join([book_table_id, book_table_alias])
+
+verse_table = "VERSES"
+verse_table_book_id = ' '.join(["BOOK_ID", "INTEGER"])
+verse_table_chapter = ' '.join(["CHAPTER", "INTEGER"])
+verse_table_verse = ' '.join(["VERSE", "INTEGER"])
+verse_table_text = ' '.join(["TEXT", "TEXT"])
+verse_table_columns = ', '.join([verse_table_book_id, verse_table_chapter, verse_table_verse, verse_table_text])
+verse_table_columns_insert = ', '.join([verse_table_book_id, verse_table_chapter, verse_table_verse, verse_table_text])
+
+connection = sqlite3.connect('bibleDB.db')
+connection.execute("CREATE TABLE %s (%s)" %(book_table, book_table_columns))
+connection.execute("CREATE TABLE %s (%s)" %(verse_table))
+
+insert = "INSERT INTO %s (%s) VALUES (%s)"
+insert_book = insert % (book_table, book_table_columns_insert)
+insert_verse = insert % (verse_table, verse_table_columns_insert)
 
 
 def generate_verses(books_metadata, xml, output):
@@ -53,6 +77,7 @@ def generate_verses(books_metadata, xml, output):
                     return
                 # append to verse list
                 verses.append(verse.text)
+                connection.execute(insert_verse %())
             # append to chapter list
             chapters.append(verses)
         # append to book list
@@ -66,6 +91,7 @@ def generate_verses(books_metadata, xml, output):
     # write to file
     with open(output, 'w') as f:
         json.dump(books, f, indent=2)
+
 
 def generate_metadata(metadata_input_file):
     """
@@ -83,6 +109,7 @@ def generate_metadata(metadata_input_file):
             json.dump(metadata_copy, f, indent = 2)
         return metadata
 
+
 def main():
     """
     main function
@@ -92,6 +119,7 @@ def main():
     metadata = generate_metadata(args[0])
     for version in metadata['versions']:
         generate_verses(metadata["verses"], version + '.xml', version + '.json')
+
     
 if "__main__" == __name__:
     main()
